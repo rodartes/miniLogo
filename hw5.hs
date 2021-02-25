@@ -294,7 +294,10 @@ draw p | check p   = toHTML (prog p)
 --   39
 --
 expr :: Env -> Expr -> Int
-expr = undefined
+expr e (Lit i) = i
+expr [(v, i)] (Ref v') = expr [(v, i)] (Lit i)
+--expr e (Add l r) = expr e (Lit l) + expr e (Lit r)
+--expr e (Mul l r) = expr e (Lit l) * expr e (Lit r)
 
 
 
