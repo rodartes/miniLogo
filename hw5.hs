@@ -155,7 +155,7 @@ checkExpr ls (Mul l r) = checkExpr ls l && checkExpr ls r
 checkCmd :: Map Macro Int -> [Var] -> Cmd -> Bool
 checkCmd l1 l2 (Move e1 e2) =  checkExpr l2 e1 && checkExpr l2 e2
 checkCmd l1 l2 (Pen m) = True
---checkCmd [(m, i)] l2 (Call mc (a:as)) = m == mc
+checkCmd [(m, i)] l2 (Call mc (a:as)) = m == mc
 --checkCmd l1 l2 (For v e1 e2 b) = 
 
 
@@ -295,9 +295,11 @@ draw p | check p   = toHTML (prog p)
 --
 expr :: Env -> Expr -> Int
 expr e (Lit i) = i
-expr [(v, i)] (Ref v') = expr [(v, i)] (Lit i)
---expr e (Add l r) = expr e (Lit l) + expr e (Lit r)
---expr e (Mul l r) = expr e (Lit l) * expr e (Lit r)
+expr e (Ref v) = case lookup v e of
+		 Just i -> i
+		 _ -> 0
+expr e (Add l r) = (expr e l) + (expr e r)
+expr e (Mul l r) = (expr e l) * (expr e r)
 
 
 
