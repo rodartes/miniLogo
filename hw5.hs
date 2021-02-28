@@ -158,7 +158,7 @@ checkCmd l1 l2 (Pen m) = True
 checkCmd l1 l2 (Call m as) = case lookup m l1 of
                             Just i -> i == length as && all (checkExpr l2) as
 			    _ -> False
---checkCmd l1 l2 (For v e1 e2 b) = 
+checkCmd l1 l2 (For v e1 e2 b) = (checkExpr l2 e1 && checkExpr l2 e2) && all (checkCmd l1 (v:l2)) b
 
 
 
