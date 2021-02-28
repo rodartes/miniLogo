@@ -187,6 +187,7 @@ checkCmd l1 l2 (For v e1 e2 b) = (checkExpr l2 e1 && checkExpr l2 e2) && all (ch
 --
 checkBlock :: Map Macro Int -> [Var] -> Block -> Bool
 checkBlock [] [] [] = True
+checkBlock l1 l2 b = all (checkCmd l1 l2) b
 
 
 
