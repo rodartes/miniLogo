@@ -155,7 +155,9 @@ checkExpr ls (Mul l r) = checkExpr ls l && checkExpr ls r
 checkCmd :: Map Macro Int -> [Var] -> Cmd -> Bool
 checkCmd l1 l2 (Move e1 e2) =  checkExpr l2 e1 && checkExpr l2 e2
 checkCmd l1 l2 (Pen m) = True
-checkCmd [(m, i)] l2 (Call mc (a:as)) = m == mc
+checkCmd l1 l2 (Call m as) = case lookup m l1 of
+                            Just i -> i == length as && all (checkExpr l2) as
+			    _ -> False
 --checkCmd l1 l2 (For v e1 e2 b) = 
 
 
