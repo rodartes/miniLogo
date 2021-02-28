@@ -212,7 +212,7 @@ checkBlock l1 l2 b = all (checkCmd l1 l2) b
 --   True
 --
 checkDef :: Map Macro Int -> Def -> Bool
-checkDef = undefined
+checkDef l1 (Define m p b) = checkBlock l1 p b
 
 
 
