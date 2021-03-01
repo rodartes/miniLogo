@@ -1,5 +1,6 @@
 -- Group members:
 --  * Samantha Rodarte, ID: 933572502
+--  * Jeremiah Barrar, ID: 931683133
 --  *
 --
 -- Grading notes: 15pts total
@@ -148,9 +149,8 @@ checkCmd l1 l2 (Move e1 e2) = checkExpr l2 e1 && checkExpr l2 e2
 checkCmd l1 l2 (Pen m) = True
 checkCmd l1 l2 (Call m as) = case lookup m l1 of
                             Just i -> i == length as && all (checkExpr l2) as
-          _ -> False
+                            _ -> False
 checkCmd l1 l2 (For v e1 e2 b) = (checkExpr l2 e1 && checkExpr l2 e2) && all (checkCmd l1 (v : l2)) b
-
 -- | Statically check whether all of the commands in a block are well formed.
 --
 --   >>> checkBlock [] [] []
@@ -281,8 +281,8 @@ draw p
 expr :: Env -> Expr -> Int
 expr e (Lit i) = i
 expr e (Ref v) = case lookup v e of
-  Just i -> i
-  _ -> 0
+  Just i -> fromIntegral i -- If Ref v is found in e (Env) then return it.
+  _ -> 0 -- Otherwise Ref v was not found, so return 0
 expr e (Add l r) = (expr e l) + (expr e r)
 expr e (Mul l r) = (expr e l) * (expr e r)
 
@@ -318,12 +318,19 @@ expr e (Mul l r) = (expr e l) * (expr e r)
 --
 --   >>> cmd ms vs (Down,(0,0)) (For "i" (Ref "x") (Lit 1) [Call "line" [Ref "i", Ref "i", Mul (Ref "x") (Ref "i"), Mul (Ref "y") (Ref "i")]])
 --   ((Down,(3,4)),[((3,3),(9,12)),((2,2),(6,8)),((1,1),(3,4))])
+
 cmd :: Macros -> Env -> State -> Cmd -> (State, [Line])
 cmd defs env state@(pen, pos) c = case c of
-  Pen Up -> undefined
-  Pen Down -> undefined
-  Move xExp yExp -> undefined
-  Call macro args -> undefined
+  Pen Up -> ((Up, pos), [])
+  Pen Down -> ((Down, pos), []) 
+  Move xExp yExp -> case pen of
+    Up -> ((Up, (expr env xExp, expr env yExp)), [])
+    Down -> ((Down, (expr env xExp, expr env yExp)), [(pos, ((expr env xExp, expr env yExp)))])
+-- example macro: Define "line" ["x1","y1","x2","y2"] [Pen Up,Move (Ref "x1") (Ref "y1"),Pen Down,Move (Ref "x2") (Ref "y2")]
+  Call macro args ->
+    let (pars, b) = getOrFail macro defs
+    in block defs (env ++ (zip pars (map (expr env) args))) state b
+
   For v fromExp toExp body ->
     let from = expr env fromExp
         to = expr env toExp
