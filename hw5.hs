@@ -1,5 +1,6 @@
 -- Group members:
 --  * Samantha Rodarte, ID: 933572502
+--  * Jeremiah Barrar, ID: 931683133
 --  *
 --
 -- Grading notes: 15pts total
@@ -25,12 +26,10 @@ module HW5 where
 import MiniLogo
 import Render
 
-
 -- Note: in this file, we're placing the AST argument as the *last* argument in
 -- each function, rather than the first argument. Although this makes the
 -- semantic domains less obvious, it's good FP style since it promotes partial
 -- application and can make some of your definitions a bit simpler.
-
 
 -- Some functions from the Prelude that may be helpful on this assignment:
 --
@@ -40,18 +39,18 @@ import Render
 --   elem :: Eq a => a -> [a] -> Bool
 --     Returns true if the first argument is contained as an element in the list.
 
-
 -- This comment is defining some MiniLogo expressions used in doctests.
 --
+
 -- $setup
 -- >>> let exprXY = Mul (Ref "y") (Add (Lit 3) (Ref "x"))
 -- >>> let exprXZ = Add (Mul (Ref "x") (Lit 4)) (Ref "z")
 
-
 --
+
 -- * Static checker
---
 
+--
 
 -- | Statically check that a MiniLogo program is well formed. This function
 --   builds up the map 'ms' that contains the defined macros and their arity
@@ -63,15 +62,12 @@ import Render
 --
 --   >>> check (Program [line,xbox] [])
 --   False
---
 check :: Prog -> Bool
 check (Program defs main) =
-    all (checkDef arities) defs && checkBlock arities [] main
-  where 
+  all (checkDef arities) defs && checkBlock arities [] main
+  where
     entry (Define m ps _) = (m, length ps)
     arities = map entry defs
-
-
 
 -- | Statically check that an expression is well formed by checking that there
 --   are no unbound variables. This function receives as an argument a list of
@@ -88,14 +84,11 @@ check (Program defs main) =
 --
 --   >>> checkExpr ["x","y"] exprXZ
 --   False
---
 checkExpr :: [Var] -> Expr -> Bool
-checkExpr ls (Ref v) =  v `elem` ls
+checkExpr ls (Ref v) = v `elem` ls
 checkExpr ls (Lit i) = True
 checkExpr ls (Add l r) = checkExpr ls l && checkExpr ls r
 checkExpr ls (Mul l r) = checkExpr ls l && checkExpr ls r
-
-
 
 -- | Statically check that a command is well formed by: (1) checking whether
 --   all expressions it contains are well formed, (2) checking whether every
@@ -151,17 +144,13 @@ checkExpr ls (Mul l r) = checkExpr ls l && checkExpr ls r
 --
 --   >>> checkCmd [("f",1)] ["x","y"] (For "z" exprXY exprXY [Pen Up, Call "f" [exprXZ]])
 --   True
---
 checkCmd :: Map Macro Int -> [Var] -> Cmd -> Bool
-checkCmd l1 l2 (Move e1 e2) =  checkExpr l2 e1 && checkExpr l2 e2
+checkCmd l1 l2 (Move e1 e2) = checkExpr l2 e1 && checkExpr l2 e2
 checkCmd l1 l2 (Pen m) = True
 checkCmd l1 l2 (Call m as) = case lookup m l1 of
                             Just i -> i == length as && all (checkExpr l2) as
-			    _ -> False
-checkCmd l1 l2 (For v e1 e2 b) = (checkExpr l2 e1 && checkExpr l2 e2) && all (checkCmd l1 (v:l2)) b
-
-
-
+                            _ -> False
+checkCmd l1 l2 (For v e1 e2 b) = (checkExpr l2 e1 && checkExpr l2 e2) && all (checkCmd l1 (v : l2)) b
 -- | Statically check whether all of the commands in a block are well formed.
 --
 --   >>> checkBlock [] [] []
@@ -189,8 +178,6 @@ checkBlock :: Map Macro Int -> [Var] -> Block -> Bool
 checkBlock [] [] [] = True
 checkBlock l1 l2 b = all (checkCmd l1 l2) b
 
-
-
 -- | Check whether a macro definition is well formed.
 --
 --   >>> checkDef [] (Define "f" [] [Pen Down, Move (Lit 2) (Lit 3), Pen Up])
@@ -210,14 +197,13 @@ checkBlock l1 l2 b = all (checkCmd l1 l2) b
 --
 --   >>> checkDef [("g",3)] (Define "f" ["x","y","z"] [Pen Down, Call "g" [exprXY,exprXZ,exprXY], Pen Up])
 --   True
---
 checkDef :: Map Macro Int -> Def -> Bool
 checkDef l1 (Define m p b) = checkBlock l1 p b
 
-
-
 --
+
 -- * Semantics of MiniLogo
+
 --
 
 -- | The state of the pen, which includes whether it is up or down and its
@@ -226,8 +212,7 @@ type State = (Mode, Point)
 
 -- | The initial state of the pen.
 initPen :: State
-initPen = (Up, (0,0))
-
+initPen = (Up, (0, 0))
 
 -- | Run a MiniLogo program by:
 --    1. Statically checking for errors. If it fails the check, stop here.
@@ -238,9 +223,9 @@ initPen = (Up, (0,0))
 --   able to apply 'draw' to a MiniLogo program, then load the file
 --   MiniLogo.html in your browswer to view the rendered image.
 draw :: Prog -> IO ()
-draw p | check p   = toHTML (prog p)
-       | otherwise = putStrLn "failed static check :-("
-
+draw p
+  | check p = toHTML (prog p)
+  | otherwise = putStrLn "failed static check :-("
 
 -- ** Semantic functions
 
@@ -284,8 +269,6 @@ draw p | check p   = toHTML (prog p)
 -- program as a result since we no longer care about the pen state once the
 -- program has completely finished running.
 
-
-
 -- | Semantics of expressions.
 --
 --   >>> let env = [("x",3),("y",4)]
@@ -295,23 +278,20 @@ draw p | check p   = toHTML (prog p)
 --
 --   >>> expr env (Add (Mul (Ref "x") (Lit 5)) (Mul (Lit 6) (Ref "y")))
 --   39
---
 expr :: Env -> Expr -> Int
 expr e (Lit i) = i
 expr e (Ref v) = case lookup v e of
-		 Just i -> i
-		 _ -> 0
+  Just i -> fromIntegral i -- If Ref v is found in e (Env) then return it.
+  _ -> 0 -- Otherwise Ref v was not found, so return 0
 expr e (Add l r) = (expr e l) + (expr e r)
 expr e (Mul l r) = (expr e l) * (expr e r)
-
-
 
 -- | Semantics of commands.
 --
 --   >>> let vs = [("x",3),("y",4)]
 --   >>> let Define _ ps b = line
 --   >>> let ms = [("m1",([],[])),("line",(ps,b)),("m2",([],[]))]
---   
+--
 --   >>> cmd [] [] (Up,(2,3)) (Pen Down)
 --   ((Down,(2,3)),[])
 --
@@ -338,34 +318,32 @@ expr e (Mul l r) = (expr e l) * (expr e r)
 --
 --   >>> cmd ms vs (Down,(0,0)) (For "i" (Ref "x") (Lit 1) [Call "line" [Ref "i", Ref "i", Mul (Ref "x") (Ref "i"), Mul (Ref "y") (Ref "i")]])
 --   ((Down,(3,4)),[((3,3),(9,12)),((2,2),(6,8)),((1,1),(3,4))])
---
+
 cmd :: Macros -> Env -> State -> Cmd -> (State, [Line])
-cmd defs env state@(pen,pos) c = case c of
+cmd defs env state@(pen, pos) c = case c of
+  Pen Up -> ((Up, pos), [])
+  Pen Down -> ((Down, pos), []) 
+  Move xExp yExp -> case pen of
+    Up -> ((Up, (expr env xExp, expr env yExp)), [])
+    Down -> ((Down, (expr env xExp, expr env yExp)), [(pos, ((expr env xExp, expr env yExp)))])
+-- example macro: Define "line" ["x1","y1","x2","y2"] [Pen Up,Move (Ref "x1") (Ref "y1"),Pen Down,Move (Ref "x2") (Ref "y2")]
+  Call macro args ->
+    let (pars, b) = getOrFail macro defs
+    in block defs (env ++ (zip pars (map (expr env) args))) state b
 
-    Pen Up   -> undefined
-    Pen Down -> undefined
+  For v fromExp toExp body ->
+    let from = expr env fromExp
+        to = expr env toExp
+        ixs = if from <= to then [from .. to] else reverse [to .. from]
 
-    Move xExp yExp -> undefined
-
-    Call macro args -> undefined
-
-    For v fromExp toExp body ->
-
-      let from = expr env fromExp
-          to   = expr env toExp
-          ixs  = if from <= to then [from .. to] else reverse [to .. from]
-
-          -- This helper function runs the body of the loop once, with the loop
-          -- index set to the given integer. You just need to study the code
-          -- and fill in the undefined part that runs the body of the loop.
-          loopStep :: (State, [Line]) -> Int -> (State, [Line])
-          loopStep (s, ls) i =
-            let (s', ls') = undefined
-            in (s', ls ++ ls')
-
-      in foldl loopStep (state, []) ixs
-
-
+        -- This helper function runs the body of the loop once, with the loop
+        -- index set to the given integer. You just need to study the code
+        -- and fill in the undefined part that runs the body of the loop.
+        loopStep :: (State, [Line]) -> Int -> (State, [Line])
+        loopStep (s, ls) i =
+          let (s', ls') = undefined
+           in (s', ls ++ ls')
+     in foldl loopStep (state, []) ixs
 
 -- | Semantics of blocks.
 --
@@ -377,25 +355,24 @@ cmd defs env state@(pen,pos) c = case c of
 --
 --   >>> block [] [] (Down,(0,0)) [Pen Up, Move (Lit 2) (Lit 3), Pen Down, Move (Lit 4) (Lit 5), Move (Lit 6) (Lit 7)]
 --   ((Down,(6,7)),[((2,3),(4,5)),((4,5),(6,7))])
--- 
 block :: Macros -> Env -> State -> Block -> (State, [Line])
 block defs env state = go state []
   where
-    go s ls []     = (s,ls)
-    go s ls (c:cs) = let (s',ls') = cmd defs env s c
-                     in go s' (ls ++ ls') cs
-
-
+    go s ls [] = (s, ls)
+    go s ls (c : cs) =
+      let (s', ls') = cmd defs env s c
+       in go s' (ls ++ ls') cs
 
 -- | Semantic function for programs.
 prog :: Prog -> [Line]
 prog (Program defs main) = snd $ block (map entry defs) [] initPen main
   where
-    entry (Define m ps b) = (m, (ps,b))
-
+    entry (Define m ps b) = (m, (ps, b))
 
 --
+
 -- * Amazing picture (extra credit)
+
 --
 
 -- | A MiniLogo program that draws your amazing picture.
