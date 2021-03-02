@@ -48,8 +48,8 @@ toGridHTML ls = writeFile "MiniLogo.html" (header ++ grid ++ content ls ++ foote
 scale, margin, width, height :: Int
 scale  = 10
 margin = 10
-width  = 800
-height = 400
+width  = 520
+height = 450
 
 gridStep = 5
 maxX = width `div` scale
