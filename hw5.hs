@@ -326,22 +326,19 @@ cmd defs env state@(pen, pos) c = case c of
   Move xExp yExp -> case pen of
     Up -> ((Up, (expr env xExp, expr env yExp)), [])
     Down -> ((Down, (expr env xExp, expr env yExp)), [(pos, ((expr env xExp, expr env yExp)))])
--- example macro: Define "line" ["x1","y1","x2","y2"] [Pen Up,Move (Ref "x1") (Ref "y1"),Pen Down,Move (Ref "x2") (Ref "y2")]
   Call macro args ->
     let (pars, b) = getOrFail macro defs
-    in block defs (env ++ (zip pars (map (expr env) args))) state b
-
+    in block defs ((zip pars (map (expr env) args))) state b
   For v fromExp toExp body ->
     let from = expr env fromExp
         to = expr env toExp
         ixs = if from <= to then [from .. to] else reverse [to .. from]
-
         -- This helper function runs the body of the loop once, with the loop
         -- index set to the given integer. You just need to study the code
         -- and fill in the undefined part that runs the body of the loop.
         loopStep :: (State, [Line]) -> Int -> (State, [Line])
         loopStep (s, ls) i =
-          let (s', ls') = undefined
+          let (s', ls') = block defs (env ++ [(v, i)]) s body
            in (s', ls ++ ls')
      in foldl loopStep (state, []) ixs
 
@@ -369,12 +366,54 @@ prog (Program defs main) = snd $ block (map entry defs) [] initPen main
   where
     entry (Define m ps b) = (m, (ps, b))
 
---
-
 -- * Amazing picture (extra credit)
-
---
-
 -- | A MiniLogo program that draws your amazing picture.
+
 amazing :: Prog
-amazing = undefined
+amazing = Program [line,box,xbox,steps]
+  [
+    For "i" (Lit 0) (Lit 8) [
+      For "j" (Lit 0) (Lit 20) [
+        Call "box" [Ref "i", Ref "j", Lit 1, Lit 1]
+      ]
+    ]
+    ,
+    For "i" (Lit 0) (Lit 8) [
+      For "j" (Lit 0) (Ref "i") [
+        Call "box" [(Ref "i"), Add (Ref "j") (Lit 20), Lit 1, Lit 1]
+      ]
+    ]
+    ,
+    For "i" (Lit 0) (Lit 10) [
+      For "j" (Lit 0) (Lit 4) [
+        Call "box" [Add (Lit 9) (Mul (Ref "j") (Lit 2)), Mul (Ref "i") (Lit (3)), Lit 2, Lit 3]
+      ]
+    ]
+    ,
+    For "i" (Lit 0) (Lit 20) [
+      For "j" (Lit 0) (Ref "i") [
+        Call "box" [Add (Mul (Ref "i") (Lit $ -1)) (Lit 51), Add (Ref "j") (Lit 17), Lit 1, Lit 1]
+      ]
+    ]
+    ,
+    For "i" (Lit 0) (Lit 20) [
+      For "j" (Lit 0) (Lit 16) [
+        Call "box" [Add (Ref "i") (Lit 31), Ref "j", Lit 1, Lit 1]
+      ]
+    ]
+    -- street edges
+    , Call "line" [Lit 19,Lit 0,Lit 21,Lit 9]
+    , Call "line" [Lit 31,Lit 0,Lit 29,Lit 9]
+    -- dashes
+    , Call "line" [Lit 25,Lit 0,Lit 25,Lit 1]
+    , Call "line" [Lit 25,Lit 2,Lit 25,Lit 3]
+    , Call "line" [Lit 25,Lit 4,Lit 25,Lit 5]
+    , Call "line" [Lit 25,Lit 6,Lit 25,Lit 7]
+    , Call "line" [Lit 25,Lit 8,Lit 25,Lit 9]
+    -- building 3D
+    , Call "line" [Lit 21,Lit 9,Lit 21,Lit 31]
+    , Call "line" [Lit 21,Lit 31,Lit 19,Lit 33]
+    , Call "line" [Lit 29,Lit 9,Lit 29,Lit 36]
+    , Call "line" [Lit 29,Lit 36,Lit 31,Lit 38]
+  ]
+
